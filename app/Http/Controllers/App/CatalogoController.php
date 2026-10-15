@@ -20,7 +20,7 @@ class CatalogoController extends Controller
 
         return Inertia::render('App/Catalogo/Index', [
             'categorias' => CategoriaItem::where('empresa_id', $empresa->id)->withCount('itens')->orderBy('ordem')->orderBy('nome')->get(),
-            'itens' => ItemCatalogo::where('empresa_id', $empresa->id)->with('categoria:id,nome')->orderBy('nome')->get(),
+            'itens' => ItemCatalogo::where('empresa_id', $empresa->id)->with('categorias:id,nome')->orderBy('nome')->get(),
             'adicionais' => Adicional::where('empresa_id', $empresa->id)->orderBy('nome')->get(),
         ]);
     }
@@ -46,7 +46,7 @@ class CatalogoController extends Controller
     public function categoriaDestroy(int $categoria)
     {
         $model = $this->categoria($categoria);
-        if ($model->itens()->exists()) {
+        if ($model->itens()->exists() || ItemCatalogo::where('categoria_id', $model->id)->exists()) {
             throw ValidationException::withMessages(['categoria' => 'Remova ou mova os itens antes de excluir a categoria.']);
         }
         $model->delete();
@@ -57,9 +57,11 @@ class CatalogoController extends Controller
     public function itemStore(Request $request)
     {
         $empresa = $this->empresa();
-        $data = $request->validate(['categoria_id' => ['required', 'integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40']]);
-        abort_unless(CategoriaItem::where('id', $data['categoria_id'])->where('empresa_id', $empresa->id)->exists(), 422, 'Categoria inválida.');
-        ItemCatalogo::create($data + ['empresa_id' => $empresa->id]);
+        $data = $request->validate(['categoria_ids' => ['required', 'array', 'min:1'], 'categoria_ids.*' => ['integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40']]);
+        $categoriaIds = CategoriaItem::where('empresa_id', $empresa->id)->whereIn('id', $data['categoria_ids'])->pluck('id');
+        abort_unless($categoriaIds->count() === count(array_unique($data['categoria_ids'])), 422, 'Uma ou mais categorias são inválidas.');
+        $item = ItemCatalogo::create([...$data, 'categoria_id' => $categoriaIds->first(), 'empresa_id' => $empresa->id]);
+        $item->categorias()->sync($categoriaIds);
 
         return back()->with('success', 'Item criado.');
     }
@@ -67,9 +69,11 @@ class CatalogoController extends Controller
     public function itemUpdate(Request $request, int $item)
     {
         $model = $this->item($item);
-        $data = $request->validate(['categoria_id' => ['required', 'integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40'], 'ativo' => ['sometimes', 'boolean']]);
-        abort_unless(CategoriaItem::where('id', $data['categoria_id'])->where('empresa_id', $model->empresa_id)->exists(), 422, 'Categoria inválida.');
-        $model->update($data);
+        $data = $request->validate(['categoria_ids' => ['required', 'array', 'min:1'], 'categoria_ids.*' => ['integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40'], 'ativo' => ['sometimes', 'boolean']]);
+        $categoriaIds = CategoriaItem::where('empresa_id', $model->empresa_id)->whereIn('id', $data['categoria_ids'])->pluck('id');
+        abort_unless($categoriaIds->count() === count(array_unique($data['categoria_ids'])), 422, 'Uma ou mais categorias são inválidas.');
+        $model->update([...$data, 'categoria_id' => $categoriaIds->first()]);
+        $model->categorias()->sync($categoriaIds);
 
         return back()->with('success', 'Item atualizado.');
     }

@@ -32,7 +32,8 @@ class DemoCatalogoSeeder extends Seeder
         ])->mapWithKeys(function (array $nomes, string $nome) use ($empresa) {
             $categoria = CategoriaItem::firstOrCreate(['empresa_id' => $empresa->id, 'slug' => Str::slug($nome)], ['nome' => $nome]);
             foreach ($nomes as $itemNome) {
-                ItemCatalogo::firstOrCreate(['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id, 'nome' => $itemNome], ['unidade' => 'porção']);
+                $item = ItemCatalogo::firstOrCreate(['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id, 'nome' => $itemNome], ['unidade' => 'porção']);
+                $item->categorias()->syncWithoutDetaching([$categoria->id]);
             }
 
             return [$categoria->id => $categoria->fresh('itens')];

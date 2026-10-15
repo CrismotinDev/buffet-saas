@@ -19,7 +19,7 @@ class CatalogoTest extends TestCase
         $categoria = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Carnes', 'slug' => 'carnes']);
 
         $this->actingAs($user)->post('/app/catalogo/itens', [
-            'categoria_id' => $categoria->id, 'nome' => 'Costela fogo de chão', 'unidade' => 'porção',
+            'categoria_ids' => [$categoria->id], 'nome' => 'Costela fogo de chão', 'unidade' => 'porção',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('itens_catalogo', ['empresa_id' => $empresa->id, 'nome' => 'Costela fogo de chão']);
@@ -41,10 +41,26 @@ class CatalogoTest extends TestCase
         $categoria = CategoriaItem::create(['empresa_id' => $other->id, 'nome' => 'Carnes', 'slug' => 'carnes']);
 
         $this->actingAs($user)->post('/app/catalogo/itens', [
-            'categoria_id' => $categoria->id, 'nome' => 'Item indevido', 'unidade' => 'unidade',
+            'categoria_ids' => [$categoria->id], 'nome' => 'Item indevido', 'unidade' => 'unidade',
         ])->assertStatus(422);
 
         $this->assertDatabaseMissing('itens_catalogo', ['empresa_id' => $empresa->id, 'nome' => 'Item indevido']);
+    }
+
+    public function test_same_item_can_belong_to_multiple_categories(): void
+    {
+        [$user, $empresa] = $this->membership('multi@example.com', 'Empresa A', 'empresa-a');
+        $carnes = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Carnes', 'slug' => 'carnes']);
+        $especiais = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Especiais', 'slug' => 'especiais']);
+
+        $this->actingAs($user)->post('/app/catalogo/itens', [
+            'categoria_ids' => [$carnes->id, $especiais->id], 'nome' => 'Pernil de Carneiro', 'unidade' => 'porção',
+        ])->assertRedirect();
+
+        $item = ItemCatalogo::where('empresa_id', $empresa->id)->where('nome', 'Pernil de Carneiro')->firstOrFail();
+        $this->assertCount(2, $item->categorias);
+        $this->assertDatabaseHas('categoria_item_catalogo', ['categoria_id' => $carnes->id, 'item_id' => $item->id]);
+        $this->assertDatabaseHas('categoria_item_catalogo', ['categoria_id' => $especiais->id, 'item_id' => $item->id]);
     }
 
     public function test_deleting_category_with_items_is_prevented_by_database(): void

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ItemCatalogo extends Model
 {
@@ -24,5 +25,10 @@ class ItemCatalogo extends Model
     public function categoria(): BelongsTo
     {
         return $this->belongsTo(CategoriaItem::class, 'categoria_id');
+    }
+
+    public function categorias(): BelongsToMany
+    {
+        return $this->belongsToMany(CategoriaItem::class, 'categoria_item_catalogo', 'item_id', 'categoria_id')->withTimestamps();
     }
 }
