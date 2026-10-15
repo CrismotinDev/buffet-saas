@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CategoriaItem;
 use App\Models\Empresa;
 use App\Models\ItemCatalogo;
+use App\Models\Pacote;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -85,6 +86,21 @@ class CatalogoTest extends TestCase
 
         $this->assertDatabaseHas('pacotes', ['empresa_id' => $empresa->id, 'slug' => 'tradicional', 'preco_base' => 75]);
         $this->assertDatabaseHas('pacote_itens', ['item_id' => $item->id, 'empresa_id' => $empresa->id]);
+    }
+
+    public function test_user_can_view_package_dishes_from_active_company(): void
+    {
+        [$user, $empresa] = $this->membership('show-package@example.com', 'Empresa A', 'empresa-a');
+        $categoria = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Carnes', 'slug' => 'carnes']);
+        $item = ItemCatalogo::create(['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id, 'nome' => 'Costela', 'unidade' => 'porção']);
+        $item->categorias()->attach($categoria);
+        $pacote = Pacote::create(['empresa_id' => $empresa->id, 'nome' => 'Tradicional', 'slug' => 'tradicional', 'tipo_preco' => 'por_pessoa', 'preco_base' => 75, 'min_convidados' => 30]);
+        $pacote->categorias()->attach($categoria, ['empresa_id' => $empresa->id, 'min_escolhas' => 1, 'max_escolhas' => 2]);
+        $pacote->itens()->attach($item, ['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id]);
+
+        $this->actingAs($user)->get("/app/pacotes/{$pacote->id}")
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('App/Pacotes/Show')->where('pacote.categorias.0.itens.0.nome', 'Costela'));
     }
 
     private function membership(string $email, string $name, string $slug): array

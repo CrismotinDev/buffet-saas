@@ -41,5 +41,6 @@ Route::prefix('app')->name('app.')->middleware(['auth', EnsureEmpresaContext::cl
     Route::get('/pacotes', [PacoteController::class, 'index'])->name('pacotes.index');
     Route::get('/pacotes/criar', [PacoteController::class, 'create'])->name('pacotes.create');
     Route::post('/pacotes', [PacoteController::class, 'store'])->name('pacotes.store');
+    Route::get('/pacotes/{pacote}', [PacoteController::class, 'show'])->name('pacotes.show');
     Route::post('/pacotes/{pacote}/alternar', [PacoteController::class, 'toggle'])->name('pacotes.toggle');
 });

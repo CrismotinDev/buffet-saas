@@ -32,6 +32,32 @@ class PacoteController extends Controller
         ]);
     }
 
+    public function show(int $pacote)
+    {
+        $model = Pacote::where('empresa_id', $this->empresa()->id)
+            ->with(['categorias', 'itens'])
+            ->findOrFail($pacote);
+
+        return Inertia::render('App/Pacotes/Show', [
+            'pacote' => [
+                ...$model->only(['id', 'nome', 'descricao', 'tipo_preco', 'preco_base', 'min_convidados', 'max_convidados', 'publicado', 'ativo']),
+                'categorias' => $model->categorias->map(fn ($categoria) => [
+                    'id' => $categoria->id,
+                    'nome' => $categoria->nome,
+                    'min_escolhas' => $categoria->pivot->min_escolhas,
+                    'max_escolhas' => $categoria->pivot->max_escolhas,
+                    'obrigatoria' => $categoria->pivot->obrigatoria,
+                    'itens' => $model->itens->filter(fn ($item) => (int) $item->pivot->categoria_id === $categoria->id)->map(fn ($item) => [
+                        'id' => $item->id,
+                        'nome' => $item->nome,
+                        'descricao' => $item->descricao,
+                        'unidade' => $item->unidade,
+                    ])->values(),
+                ])->values(),
+            ],
+        ]);
+    }
+
     public function store(Request $request)
     {
         $empresa = $this->empresa();
