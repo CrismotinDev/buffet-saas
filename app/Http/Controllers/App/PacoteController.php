@@ -49,6 +49,21 @@ class PacoteController extends Controller
         ]);
     }
 
+    public function edit(int $pacote)
+    {
+        $empresa = $this->empresa();
+        $model = Pacote::where('empresa_id', $empresa->id)->with(['categorias', 'itens'])->findOrFail($pacote);
+
+        return Inertia::render('App/Pacotes/Create', [
+            'categorias' => CategoriaItem::where('empresa_id', $empresa->id)->where('ativo', true)->with(['itens' => fn ($q) => $q->where('ativo', true)->orderBy('nome')])->orderBy('ordem')->get(),
+            'pacote' => [
+                ...$model->only(['id', 'nome', 'descricao', 'tipo_preco', 'preco_base', 'min_convidados', 'max_convidados', 'publicado']),
+                'categoria_ids' => $model->categorias->pluck('id')->values(),
+                'item_ids' => $model->itens->pluck('id')->values(),
+            ],
+        ]);
+    }
+
     public function show(int $pacote)
     {
         $model = Pacote::where('empresa_id', $this->empresa()->id)
@@ -102,6 +117,35 @@ class PacoteController extends Controller
         });
 
         return redirect()->route('app.pacotes.index')->with('success', 'Pacote criado.');
+    }
+
+    public function update(Request $request, int $pacote)
+    {
+        $empresa = $this->empresa();
+        $model = Pacote::where('empresa_id', $empresa->id)->findOrFail($pacote);
+        $data = $request->validate([
+            'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'],
+            'tipo_preco' => ['required', 'in:por_pessoa,fixo'], 'preco_base' => ['required', 'numeric', 'min:0'],
+            'min_convidados' => ['required', 'integer', 'min:1'], 'max_convidados' => ['nullable', 'integer', 'gte:min_convidados'],
+            'publicado' => ['sometimes', 'boolean'], 'categoria_ids' => ['array'], 'categoria_ids.*' => ['integer'], 'item_ids' => ['array'], 'item_ids.*' => ['integer'],
+        ]);
+        $categoriaIds = CategoriaItem::where('empresa_id', $empresa->id)->whereIn('id', $data['categoria_ids'] ?? [])->pluck('id');
+        $itemIds = ItemCatalogo::where('empresa_id', $empresa->id)->whereIn('id', $data['item_ids'] ?? [])->pluck('id');
+        DB::transaction(function () use ($model, $data, $empresa, $categoriaIds, $itemIds): void {
+            $model->update(collect($data)->except(['categoria_ids', 'item_ids'])->all());
+            $model->categorias()->sync($categoriaIds->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id]])->all());
+            $model->itens()->sync($itemIds->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id, 'categoria_id' => ItemCatalogo::find($id)->categoria_id]])->all());
+        });
+
+        return redirect()->route('app.pacotes.index')->with('success', 'Pacote atualizado.');
+    }
+
+    public function destroy(int $pacote)
+    {
+        $model = Pacote::where('empresa_id', $this->empresa()->id)->findOrFail($pacote);
+        $model->delete();
+
+        return redirect()->route('app.pacotes.index')->with('success', 'Pacote excluído.');
     }
 
     public function toggle(int $pacote)

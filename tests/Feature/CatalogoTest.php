@@ -103,6 +103,21 @@ class CatalogoTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('App/Pacotes/Index')->where('pacotes.0.categorias.0.itens.0.nome', 'Costela'));
     }
 
+    public function test_user_can_edit_and_delete_a_package_in_active_company(): void
+    {
+        [$user, $empresa] = $this->membership('manage-package@example.com', 'Empresa A', 'empresa-a');
+        $pacote = Pacote::create(['empresa_id' => $empresa->id, 'nome' => 'Tradicional', 'slug' => 'tradicional', 'tipo_preco' => 'por_pessoa', 'preco_base' => 75, 'min_convidados' => 30]);
+
+        $this->actingAs($user)->put("/app/pacotes/{$pacote->id}", [
+            'nome' => 'Tradicional Especial', 'tipo_preco' => 'por_pessoa', 'preco_base' => 85,
+            'min_convidados' => 40, 'categoria_ids' => [], 'item_ids' => [],
+        ])->assertRedirect('/app/pacotes');
+
+        $this->assertDatabaseHas('pacotes', ['id' => $pacote->id, 'nome' => 'Tradicional Especial', 'preco_base' => 85]);
+        $this->actingAs($user)->delete("/app/pacotes/{$pacote->id}")->assertRedirect('/app/pacotes');
+        $this->assertDatabaseMissing('pacotes', ['id' => $pacote->id]);
+    }
+
     private function membership(string $email, string $name, string $slug): array
     {
         $user = User::factory()->create(['email' => $email]);

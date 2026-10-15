@@ -15,6 +15,8 @@ const abrirPratos = (pacote) => {
 };
 
 const toggle = (id) => router.post(`/app/pacotes/${id}/alternar`);
+const editar = (id) => { window.location.href = `/app/pacotes/${id}/editar`; };
+const excluir = (id) => { if (confirm('Deseja excluir este pacote? Esta ação não pode ser desfeita.')) router.delete(`/app/pacotes/${id}`); };
 </script>
 
 <template>
@@ -45,7 +47,7 @@ const toggle = (id) => router.post(`/app/pacotes/${id}/alternar`);
                     <v-divider class="my-5" />
                     <div class="d-flex flex-wrap ga-2"><v-chip size="small" variant="outlined" prepend-icon="mdi-account-group-outline">{{ pacote.min_convidados }}{{ pacote.max_convidados ? `–${pacote.max_convidados}` : '+' }} convidados</v-chip><v-chip size="small" variant="outlined" prepend-icon="mdi-food-outline">{{ pacote.itens_count }} pratos</v-chip></div>
                 </v-card-text>
-                <v-card-actions class="pa-6 pt-2"><v-btn block color="primary" variant="tonal" size="large" rounded="lg" prepend-icon="mdi-eye-outline" @click="abrirPratos(pacote)">Ver composição do pacote</v-btn><v-btn icon="mdi-dots-vertical" variant="text" aria-label="Mais ações" @click="toggle(pacote.id)" /></v-card-actions>
+                <v-card-actions class="pa-6 pt-2"><v-btn block color="primary" variant="tonal" size="large" rounded="lg" prepend-icon="mdi-eye-outline" @click="abrirPratos(pacote)">Ver composição do pacote</v-btn><v-menu location="bottom end"><template #activator="{ props: menuProps }"><v-btn v-bind="menuProps" icon="mdi-dots-vertical" variant="text" aria-label="Mais ações" /></template><v-list density="compact" min-width="180"><v-list-item prepend-icon="mdi-pencil-outline" title="Editar pacote" @click="editar(pacote.id)" /><v-list-item :prepend-icon="pacote.ativo ? 'mdi-pause-circle-outline' : 'mdi-play-circle-outline'" :title="pacote.ativo ? 'Desativar pacote' : 'Ativar pacote'" @click="toggle(pacote.id)" /><v-list-item prepend-icon="mdi-delete-outline" title="Excluir pacote" class="text-error" @click="excluir(pacote.id)" /></v-list></v-menu></v-card-actions>
             </v-card>
         </v-col>
     </v-row>
