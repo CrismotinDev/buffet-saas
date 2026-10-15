@@ -88,7 +88,7 @@ class CatalogoTest extends TestCase
         $this->assertDatabaseHas('pacote_itens', ['item_id' => $item->id, 'empresa_id' => $empresa->id]);
     }
 
-    public function test_user_can_view_package_dishes_from_active_company(): void
+    public function test_package_list_includes_dishes_for_modal_view(): void
     {
         [$user, $empresa] = $this->membership('show-package@example.com', 'Empresa A', 'empresa-a');
         $categoria = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Carnes', 'slug' => 'carnes']);
@@ -98,9 +98,9 @@ class CatalogoTest extends TestCase
         $pacote->categorias()->attach($categoria, ['empresa_id' => $empresa->id, 'min_escolhas' => 1, 'max_escolhas' => 2]);
         $pacote->itens()->attach($item, ['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id]);
 
-        $this->actingAs($user)->get("/app/pacotes/{$pacote->id}")
+        $this->actingAs($user)->get('/app/pacotes')
             ->assertSuccessful()
-            ->assertInertia(fn ($page) => $page->component('App/Pacotes/Show')->where('pacote.categorias.0.itens.0.nome', 'Costela'));
+            ->assertInertia(fn ($page) => $page->component('App/Pacotes/Index')->where('pacotes.0.categorias.0.itens.0.nome', 'Costela'));
     }
 
     private function membership(string $email, string $name, string $slug): array

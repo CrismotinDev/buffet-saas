@@ -19,7 +19,24 @@ class PacoteController extends Controller
         $empresa = $this->empresa();
 
         return Inertia::render('App/Pacotes/Index', [
-            'pacotes' => Pacote::where('empresa_id', $empresa->id)->withCount(['categorias', 'itens'])->orderBy('ordem')->orderBy('nome')->get(),
+            'pacotes' => Pacote::where('empresa_id', $empresa->id)->withCount(['categorias', 'itens'])->with(['categorias', 'itens'])->orderBy('ordem')->orderBy('nome')->get()->map(function (Pacote $pacote) {
+                return [
+                    ...$pacote->only(['id', 'nome', 'tipo_preco', 'preco_base', 'min_convidados', 'max_convidados', 'ativo', 'publicado', 'categorias_count', 'itens_count']),
+                    'categorias' => $pacote->categorias->map(fn ($categoria) => [
+                        'id' => $categoria->id,
+                        'nome' => $categoria->nome,
+                        'min_escolhas' => $categoria->pivot->min_escolhas,
+                        'max_escolhas' => $categoria->pivot->max_escolhas,
+                        'obrigatoria' => $categoria->pivot->obrigatoria,
+                        'itens' => $pacote->itens->filter(fn ($item) => (int) $item->pivot->categoria_id === $categoria->id)->map(fn ($item) => [
+                            'id' => $item->id,
+                            'nome' => $item->nome,
+                            'descricao' => $item->descricao,
+                            'unidade' => $item->unidade,
+                        ])->values(),
+                    ])->values(),
+                ];
+            }),
         ]);
     }
 
