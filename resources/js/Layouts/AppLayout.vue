@@ -32,8 +32,8 @@ function sair() {
             <v-list nav density="comfortable" class="pa-3">
                 <v-list-item prepend-icon="mdi-view-dashboard-outline" title="Dashboard" href="/app/dashboard" />
                 <v-list-item prepend-icon="mdi-storefront-outline" title="Minha empresa" href="/app/empresa" />
-                <v-list-item prepend-icon="mdi-food-outline" title="Catálogo" disabled />
-                <v-list-item prepend-icon="mdi-package-variant-closed" title="Pacotes" disabled />
+                <v-list-item prepend-icon="mdi-food-outline" title="Catálogo" href="/app/catalogo" />
+                <v-list-item prepend-icon="mdi-package-variant-closed" title="Pacotes" href="/app/pacotes" />
                 <v-list-item prepend-icon="mdi-file-document-outline" title="Solicitações" disabled />
             </v-list>
         </v-navigation-drawer>
