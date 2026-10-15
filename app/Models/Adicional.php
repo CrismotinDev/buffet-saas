@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Adicional extends Model
 {
+    protected $table = 'adicionais';
+
     protected $fillable = ['empresa_id', 'nome', 'descricao', 'tipo_cobranca', 'valor_unitario', 'min_quantidade', 'max_quantidade', 'ativo'];
 
     protected function casts(): array

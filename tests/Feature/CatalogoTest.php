@@ -25,6 +25,15 @@ class CatalogoTest extends TestCase
         $this->assertDatabaseHas('itens_catalogo', ['empresa_id' => $empresa->id, 'nome' => 'Costela fogo de chão']);
     }
 
+    public function test_catalog_page_loads_all_catalog_tables(): void
+    {
+        [$user] = $this->membership('page@example.com', 'Empresa A', 'empresa-a');
+
+        $this->actingAs($user)->get('/app/catalogo')
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('App/Catalogo/Index'));
+    }
+
     public function test_catalog_item_from_another_company_is_rejected(): void
     {
         [$user, $empresa] = $this->membership('catalogo@example.com', 'Empresa A', 'empresa-a');
