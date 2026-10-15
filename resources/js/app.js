@@ -10,7 +10,7 @@ import '@mdi/font/css/materialdesignicons.css';
 
 const vuetify = createVuetify({
     theme: {
-        defaultTheme: 'light',
+        defaultTheme: typeof window !== 'undefined' && window.localStorage.getItem('gestao-eventos-theme') === 'dark' ? 'dark' : 'light',
         themes: {
             light: {
                 colors: {
@@ -18,6 +18,15 @@ const vuetify = createVuetify({
                     secondary: '#b45309',
                     surface: '#ffffff',
                     background: '#f8fafc',
+                },
+            },
+            dark: {
+                dark: true,
+                colors: {
+                    primary: '#fca5a5',
+                    secondary: '#fbbf24',
+                    surface: '#1e293b',
+                    background: '#0f172a',
                 },
             },
         },

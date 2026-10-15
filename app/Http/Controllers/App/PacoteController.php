@@ -19,9 +19,10 @@ class PacoteController extends Controller
         $empresa = $this->empresa();
 
         return Inertia::render('App/Pacotes/Index', [
+            'empresaSlug' => $empresa->slug,
             'pacotes' => Pacote::where('empresa_id', $empresa->id)->withCount(['categorias', 'itens'])->with(['categorias', 'itens.categorias'])->orderBy('ordem')->orderBy('nome')->get()->map(function (Pacote $pacote) {
                 return [
-                    ...$pacote->only(['id', 'nome', 'tipo_preco', 'preco_base', 'min_convidados', 'max_convidados', 'ativo', 'publicado', 'categorias_count', 'itens_count']),
+                    ...$pacote->only(['id', 'nome', 'slug', 'tipo_preco', 'preco_base', 'min_convidados', 'max_convidados', 'ativo', 'publicado', 'categorias_count', 'itens_count']),
                     'categorias' => $this->categoriasComItens($pacote),
                 ];
             }),
@@ -98,7 +99,7 @@ class PacoteController extends Controller
                 $slug = $baseSlug.'-'.($n++);
             }
             $pacote = Pacote::create([...collect($data)->except(['categoria_ids', 'item_ids'])->all(), 'empresa_id' => $empresa->id, 'slug' => $slug]);
-            $pacote->categorias()->attach($idsCategorias->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id]])->all());
+            $pacote->categorias()->attach($idsCategorias->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id, 'min_escolhas' => 0, 'max_escolhas' => max(1, DB::table('categoria_item_catalogo')->where('categoria_id', $id)->whereIn('item_id', $idsItens)->count())]])->all());
             $pacote->itens()->attach($idsItens->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id, 'categoria_id' => ItemCatalogo::find($id)->categoria_id]])->all());
 
             return $pacote;
@@ -121,7 +122,7 @@ class PacoteController extends Controller
         $itemIds = ItemCatalogo::where('empresa_id', $empresa->id)->whereIn('id', $data['item_ids'] ?? [])->pluck('id');
         DB::transaction(function () use ($model, $data, $empresa, $categoriaIds, $itemIds): void {
             $model->update(collect($data)->except(['categoria_ids', 'item_ids'])->all());
-            $model->categorias()->sync($categoriaIds->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id]])->all());
+            $model->categorias()->sync($categoriaIds->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id, 'min_escolhas' => 0, 'max_escolhas' => max(1, DB::table('categoria_item_catalogo')->where('categoria_id', $id)->whereIn('item_id', $itemIds)->count())]])->all());
             $model->itens()->sync($itemIds->mapWithKeys(fn ($id) => [$id => ['empresa_id' => $empresa->id, 'categoria_id' => ItemCatalogo::find($id)->categoria_id]])->all());
         });
 

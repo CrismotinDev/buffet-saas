@@ -5,7 +5,9 @@ use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\EmpresaController;
 use App\Http\Controllers\App\EmpresaSwitchController;
 use App\Http\Controllers\App\PacoteController;
+use App\Http\Controllers\App\SolicitacaoController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Publico\CardapioController;
 use App\Http\Middleware\EnsureEmpresaContext;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +24,13 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')->name('logout');
+
+Route::get('/e/{empresa:slug}', [CardapioController::class, 'empresa'])->name('publico.cardapio.empresa');
+Route::get('/e/{empresa:slug}/cardapio-personalizado', [CardapioController::class, 'personalizado'])->name('publico.cardapio.personalizado');
+Route::post('/e/{empresa:slug}/cardapio-personalizado/solicitacoes', [CardapioController::class, 'solicitarPersonalizado'])->name('publico.cardapio.personalizado.solicitar');
+Route::get('/e/{empresa:slug}/pacotes/{pacote:slug}', [CardapioController::class, 'pacote'])->name('publico.cardapio.pacote');
+Route::post('/e/{empresa:slug}/pacotes/{pacote:slug}/solicitacoes', [CardapioController::class, 'solicitar'])->name('publico.cardapio.solicitar');
+Route::get('/solicitacoes/confirmacao/{protocolo}', [CardapioController::class, 'confirmacao'])->name('publico.solicitacao.confirmacao');
 
 Route::prefix('app')->name('app.')->middleware(['auth', EnsureEmpresaContext::class])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -45,4 +54,7 @@ Route::prefix('app')->name('app.')->middleware(['auth', EnsureEmpresaContext::cl
     Route::put('/pacotes/{pacote}', [PacoteController::class, 'update'])->name('pacotes.update');
     Route::delete('/pacotes/{pacote}', [PacoteController::class, 'destroy'])->name('pacotes.destroy');
     Route::post('/pacotes/{pacote}/alternar', [PacoteController::class, 'toggle'])->name('pacotes.toggle');
+    Route::get('/solicitacoes', [SolicitacaoController::class, 'index'])->name('solicitacoes.index');
+    Route::patch('/solicitacoes/{solicitacao}/retorno', [SolicitacaoController::class, 'agendarRetorno'])->name('solicitacoes.retorno');
+    Route::delete('/solicitacoes/{solicitacao}', [SolicitacaoController::class, 'destroy'])->name('solicitacoes.destroy');
 });

@@ -15,7 +15,7 @@ const editandoItem = ref(null);
 const editandoCategoria = ref(null);
 const editandoAdicional = ref(null);
 
-const itemForm = useForm({ categoria_ids: [], nome: '', descricao: '', unidade: 'unidade' });
+const itemForm = useForm({ categoria_ids: [], nome: '', descricao: '', unidade: 'unidade', tipo_item: 'comida', preco_unitario: null, referencia_consumo: '' });
 const categoriaForm = useForm({ nome: '', ordem: 0 });
 const adicionalForm = useForm({ nome: '', descricao: '', tipo_cobranca: 'por_pessoa', valor_unitario: 0, min_quantidade: 1, max_quantidade: null });
 
@@ -30,6 +30,9 @@ function abrirNovoItem() {
     itemForm.reset();
     itemForm.categoria_ids = [];
     itemForm.unidade = 'unidade';
+    itemForm.tipo_item = 'comida';
+    itemForm.preco_unitario = null;
+    itemForm.referencia_consumo = '';
     itemForm.clearErrors();
     itemDialog.value = true;
 }
@@ -40,6 +43,9 @@ function abrirEdicaoItem(item) {
     itemForm.nome = item.nome;
     itemForm.descricao = item.descricao ?? '';
     itemForm.unidade = item.unidade;
+    itemForm.tipo_item = item.tipo_item ?? 'comida';
+    itemForm.preco_unitario = item.preco_unitario ?? null;
+    itemForm.referencia_consumo = item.referencia_consumo ?? '';
     itemForm.clearErrors();
     itemDialog.value = true;
 }
@@ -129,7 +135,7 @@ function remover(url) {
         </v-window>
     </v-card>
 
-    <v-dialog v-model="itemDialog" max-width="620"><v-card rounded="xl"><v-card-title class="pa-6 pb-2">{{ editandoItem ? 'Editar item' : 'Novo item' }}</v-card-title><v-card-subtitle class="px-6">Associe o prato a uma ou mais categorias.</v-card-subtitle><v-card-text class="pa-6"><v-form @submit.prevent="salvarItem"><v-text-field v-model="itemForm.nome" label="Nome do item" :error-messages="itemForm.errors.nome" autofocus /><v-select v-model="itemForm.categoria_ids" label="Categorias" :items="categorias" item-title="nome" item-value="id" multiple chips closable-chips :error-messages="itemForm.errors.categoria_ids" hint="O mesmo item pode pertencer a várias categorias." persistent-hint /><v-textarea v-model="itemForm.descricao" label="Descrição" rows="3" :error-messages="itemForm.errors.descricao" /><v-text-field v-model="itemForm.unidade" label="Unidade de apresentação" :error-messages="itemForm.errors.unidade" /></v-form></v-card-text><v-divider /><v-card-actions class="pa-5"><v-btn variant="text" @click="itemDialog = false">Cancelar</v-btn><v-spacer /><v-btn color="primary" rounded="lg" :loading="itemForm.processing" @click="salvarItem">{{ editandoItem ? 'Salvar alterações' : 'Cadastrar item' }}</v-btn></v-card-actions></v-card></v-dialog>
+    <v-dialog v-model="itemDialog" max-width="620"><v-card rounded="xl"><v-card-title class="pa-6 pb-2">{{ editandoItem ? 'Editar item' : 'Novo item' }}</v-card-title><v-card-subtitle class="px-6">Associe o item a uma ou mais categorias.</v-card-subtitle><v-card-text class="pa-6"><v-form @submit.prevent="salvarItem"><v-text-field v-model="itemForm.nome" label="Nome do item" :error-messages="itemForm.errors.nome" autofocus /><v-select v-model="itemForm.tipo_item" label="Tipo do item" :items="[{ title: 'Comida / prato', value: 'comida' }, { title: 'Bebida', value: 'bebida' }]" :error-messages="itemForm.errors.tipo_item" /><v-text-field v-if="itemForm.tipo_item === 'bebida'" v-model="itemForm.preco_unitario" label="Preço unitário" type="number" min="0" step="0.01" prefix="R$" :error-messages="itemForm.errors.preco_unitario" /><v-text-field v-if="itemForm.tipo_item === 'bebida'" v-model="itemForm.referencia_consumo" label="Referência de consumo por pessoa" placeholder="Ex.: 600 ml por pessoa ou 3 garrafinhas de 300 ml por pessoa" hint="Exibida para orientar o cliente no cardápio público." persistent-hint :error-messages="itemForm.errors.referencia_consumo" /><v-select v-model="itemForm.categoria_ids" label="Categorias" :items="categorias" item-title="nome" item-value="id" multiple chips closable-chips :error-messages="itemForm.errors.categoria_ids" hint="O mesmo item pode pertencer a várias categorias." persistent-hint /><v-textarea v-model="itemForm.descricao" label="Descrição" rows="3" :error-messages="itemForm.errors.descricao" /><v-text-field v-model="itemForm.unidade" label="Unidade de apresentação" :error-messages="itemForm.errors.unidade" /></v-form></v-card-text><v-divider /><v-card-actions class="pa-5"><v-btn variant="text" @click="itemDialog = false">Cancelar</v-btn><v-spacer /><v-btn color="primary" rounded="lg" :loading="itemForm.processing" @click="salvarItem">{{ editandoItem ? 'Salvar alterações' : 'Cadastrar item' }}</v-btn></v-card-actions></v-card></v-dialog>
     <v-dialog v-model="categoriaDialog" max-width="500"><v-card rounded="xl"><v-card-title class="pa-6 pb-2">{{ editandoCategoria ? 'Editar categoria' : 'Nova categoria' }}</v-card-title><v-card-text class="pa-6"><v-text-field v-model="categoriaForm.nome" label="Nome da categoria" :error-messages="categoriaForm.errors.nome" autofocus /><v-text-field v-model="categoriaForm.ordem" label="Ordem de exibição" type="number" min="0" :error-messages="categoriaForm.errors.ordem" /></v-card-text><v-divider /><v-card-actions class="pa-5"><v-btn variant="text" @click="categoriaDialog = false">Cancelar</v-btn><v-spacer /><v-btn color="primary" rounded="lg" :loading="categoriaForm.processing" @click="salvarCategoria">Salvar categoria</v-btn></v-card-actions></v-card></v-dialog>
     <v-dialog v-model="adicionalDialog" max-width="620"><v-card rounded="xl"><v-card-title class="pa-6 pb-2">{{ editandoAdicional ? 'Editar adicional' : 'Novo adicional' }}</v-card-title><v-card-text class="pa-6"><v-text-field v-model="adicionalForm.nome" label="Nome do adicional" :error-messages="adicionalForm.errors.nome" autofocus /><v-textarea v-model="adicionalForm.descricao" label="Descrição" rows="2" /><v-select v-model="adicionalForm.tipo_cobranca" label="Tipo de cobrança" :items="[{title:'Por pessoa',value:'por_pessoa'},{title:'Por evento',value:'por_evento'},{title:'Por unidade',value:'por_unidade'}]" /><v-text-field v-model="adicionalForm.valor_unitario" label="Valor unitário" type="number" min="0" step="0.01" prefix="R$" :error-messages="adicionalForm.errors.valor_unitario" /><v-row><v-col cols="6"><v-text-field v-model="adicionalForm.min_quantidade" label="Mínimo" type="number" min="1" /></v-col><v-col cols="6"><v-text-field v-model="adicionalForm.max_quantidade" label="Máximo" type="number" min="1" /></v-col></v-row></v-card-text><v-divider /><v-card-actions class="pa-5"><v-btn variant="text" @click="adicionalDialog = false">Cancelar</v-btn><v-spacer /><v-btn color="primary" rounded="lg" :loading="adicionalForm.processing" @click="salvarAdicional">Salvar adicional</v-btn></v-card-actions></v-card></v-dialog>
 </template>

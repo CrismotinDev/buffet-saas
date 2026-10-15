@@ -6,6 +6,7 @@ use App\Models\CategoriaItem;
 use App\Models\Empresa;
 use App\Models\ItemCatalogo;
 use App\Models\Pacote;
+use App\Models\SolicitacaoOrcamento;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -117,6 +118,76 @@ class CatalogoTest extends TestCase
         $this->assertDatabaseHas('pacotes', ['id' => $pacote->id, 'nome' => 'Tradicional Especial', 'preco_base' => 85]);
         $this->actingAs($user)->delete("/app/pacotes/{$pacote->id}")->assertRedirect('/app/pacotes');
         $this->assertDatabaseMissing('pacotes', ['id' => $pacote->id]);
+    }
+
+    public function test_published_package_is_available_on_public_cardapio_link(): void
+    {
+        [$user, $empresa] = $this->membership('public-cardapio@example.com', 'Empresa A', 'empresa-a');
+        $pacote = Pacote::create([
+            'empresa_id' => $empresa->id, 'nome' => 'Pacote Tradicional', 'slug' => 'pacote-tradicional',
+            'tipo_preco' => 'por_pessoa', 'preco_base' => 75, 'min_convidados' => 30, 'publicado' => true, 'ativo' => true,
+        ]);
+        $categoria = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Acompanhamentos', 'slug' => 'acompanhamentos']);
+        $item = ItemCatalogo::create(['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id, 'nome' => 'Risoto', 'unidade' => 'porção']);
+        $item->categorias()->attach($categoria);
+        $pacote->categorias()->attach($categoria, ['empresa_id' => $empresa->id, 'min_escolhas' => 1, 'max_escolhas' => 1]);
+        $pacote->itens()->attach($item, ['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id]);
+
+        $this->get('/e/empresa-a')
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('Publico/Cardapio/Empresa')->where('empresa.slug', 'empresa-a')->where('pacotes.0.slug', $pacote->slug));
+
+        $this->get('/e/empresa-a/pacotes/pacote-tradicional')
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('Publico/Cardapio/Pacote')->where('pacote.nome', 'Pacote Tradicional'));
+
+        $this->post('/e/empresa-a/pacotes/pacote-tradicional/solicitacoes', [
+            'nome_contato' => 'Cliente Teste', 'email' => 'cliente@example.com', 'telefone' => '11999999999',
+            'data_evento' => '2030-01-10', 'convidados' => 50, 'tipo_local' => 'interno', 'aceita_contato' => true, 'item_ids' => [$item->id],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('solicitacoes_orcamento', ['empresa_id' => $empresa->id, 'pacote_id' => $pacote->id, 'preco_estimado' => 3750]);
+        $this->assertDatabaseHas('solicitacao_itens', ['item_id' => $item->id, 'nome_snapshot' => 'Risoto']);
+
+        $protocolo = SolicitacaoOrcamento::query()->value('protocolo');
+        $this->get("/solicitacoes/confirmacao/{$protocolo}")
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('Publico/Cardapio/Confirmacao')
+                ->where('relatorio.preco_estimado', '3750.00')
+                ->where('relatorio.aceita_contato', true)
+                ->where('relatorio.itens.0.nome', 'Risoto'));
+
+        $this->actingAs($user)->get('/app/solicitacoes')
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('App/Solicitacoes/Index')->where('solicitacoes.0.protocolo', fn ($protocolo) => is_string($protocolo)));
+
+        $this->post('/e/empresa-a/pacotes/pacote-tradicional/solicitacoes', [
+            'nome_contato' => 'Cliente Personalizado', 'email' => 'personalizado@example.com', 'telefone' => '11988888888',
+            'data_evento' => '2030-02-10', 'convidados' => 50, 'tipo_local' => 'interno', 'aceita_contato' => true,
+            'modo_cardapio' => 'personalizado', 'item_ids' => [$item->id],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('solicitacoes_orcamento', [
+            'empresa_id' => $empresa->id, 'modo_cardapio' => 'personalizado', 'preco_estimado' => 0,
+        ]);
+    }
+
+    public function test_custom_menu_sums_beverage_quantity_by_unit_price(): void
+    {
+        [, $empresa] = $this->membership('drinks@example.com', 'Empresa A', 'empresa-a');
+        $pacote = Pacote::create(['empresa_id' => $empresa->id, 'nome' => 'Base', 'slug' => 'base', 'tipo_preco' => 'por_pessoa', 'preco_base' => 75, 'min_convidados' => 30, 'publicado' => true, 'ativo' => true]);
+        $categoria = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Bebidas', 'slug' => 'bebidas']);
+        $bebida = ItemCatalogo::create(['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id, 'nome' => 'Refrigerante', 'unidade' => 'lata', 'tipo_item' => 'bebida', 'preco_unitario' => 5]);
+
+        $this->post('/e/empresa-a/cardapio-personalizado/solicitacoes', [
+            'nome_contato' => 'Cliente Bebidas', 'email' => 'bebidas@example.com', 'telefone' => '11999999999',
+            'data_evento' => '2030-03-10', 'convidados' => 30, 'tipo_local' => 'interno', 'aceita_contato' => true,
+            'item_ids' => [$bebida->id], 'item_quantidades' => [$bebida->id => 12],
+        ])->assertRedirect();
+
+        $solicitacao = SolicitacaoOrcamento::latest('id')->firstOrFail();
+        $this->assertSame('60.00', $solicitacao->preco_estimado);
+        $this->assertDatabaseHas('solicitacao_itens', ['solicitacao_id' => $solicitacao->id, 'item_id' => $bebida->id, 'quantidade' => 12, 'subtotal_snapshot' => 60]);
     }
 
     private function membership(string $email, string $name, string $slug): array

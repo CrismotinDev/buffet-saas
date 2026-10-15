@@ -4,7 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '../../../Layouts/AppLayout.vue';
 
 defineOptions({ layout: AppLayout });
-defineProps({ pacotes: { type: Array, required: true } });
+const props = defineProps({ pacotes: { type: Array, required: true }, empresaSlug: { type: String, required: true } });
 
 const pacoteSelecionado = ref(null);
 const modalAberto = ref(false);
@@ -17,6 +17,7 @@ const abrirPratos = (pacote) => {
 const toggle = (id) => router.post(`/app/pacotes/${id}/alternar`);
 const editar = (id) => { window.location.href = `/app/pacotes/${id}/editar`; };
 const excluir = (id) => { if (confirm('Deseja excluir este pacote? Esta ação não pode ser desfeita.')) router.delete(`/app/pacotes/${id}`); };
+const compartilhar = async () => { const link = `${window.location.origin}/e/${props.empresaSlug}`; await navigator.clipboard.writeText(link); window.alert('Link do cardápio copiado.'); };
 </script>
 
 <template>
@@ -38,6 +39,7 @@ const excluir = (id) => { if (confirm('Deseja excluir este pacote? Esta ação n
             <v-card border flat rounded="xl" class="package-card h-100 d-flex flex-column">
                 <div class="package-card__accent" />
                 <div class="package-card__actions">
+                    <v-tooltip text="Copiar link do cardápio" location="top"><template #activator="{ props: tooltipProps }"><v-btn v-bind="tooltipProps" icon="mdi-link-variant" variant="text" size="small" color="primary" aria-label="Copiar link do cardápio" @click="compartilhar" /></template></v-tooltip>
                     <v-tooltip text="Ver composição" location="top"><template #activator="{ props: tooltipProps }"><v-btn v-bind="tooltipProps" icon="mdi-eye-outline" variant="text" size="small" color="primary" aria-label="Ver composição do pacote" @click="abrirPratos(pacote)" /></template></v-tooltip>
                     <v-tooltip text="Editar pacote" location="top"><template #activator="{ props: tooltipProps }"><v-btn v-bind="tooltipProps" icon="mdi-pencil-outline" variant="text" size="small" color="primary" aria-label="Editar pacote" @click="editar(pacote.id)" /></template></v-tooltip>
                     <v-tooltip :text="pacote.ativo ? 'Desativar pacote' : 'Ativar pacote'" location="top"><template #activator="{ props: tooltipProps }"><v-btn v-bind="tooltipProps" :icon="pacote.ativo ? 'mdi-pause-circle-outline' : 'mdi-play-circle-outline'" variant="text" size="small" color="medium-emphasis" :aria-label="pacote.ativo ? 'Desativar pacote' : 'Ativar pacote'" @click="toggle(pacote.id)" /></template></v-tooltip>

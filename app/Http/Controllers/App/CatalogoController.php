@@ -57,10 +57,10 @@ class CatalogoController extends Controller
     public function itemStore(Request $request)
     {
         $empresa = $this->empresa();
-        $data = $request->validate(['categoria_ids' => ['required', 'array', 'min:1'], 'categoria_ids.*' => ['integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40']]);
+        $data = $request->validate(['categoria_ids' => ['required', 'array', 'min:1'], 'categoria_ids.*' => ['integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40'], 'tipo_item' => ['sometimes', 'in:comida,bebida'], 'preco_unitario' => ['nullable', 'numeric', 'min:0'], 'referencia_consumo' => ['nullable', 'string', 'max:160']]);
         $categoriaIds = CategoriaItem::where('empresa_id', $empresa->id)->whereIn('id', $data['categoria_ids'])->pluck('id');
         abort_unless($categoriaIds->count() === count(array_unique($data['categoria_ids'])), 422, 'Uma ou mais categorias são inválidas.');
-        $item = ItemCatalogo::create([...$data, 'categoria_id' => $categoriaIds->first(), 'empresa_id' => $empresa->id]);
+        $item = ItemCatalogo::create([...$data, 'tipo_item' => $data['tipo_item'] ?? 'comida', 'categoria_id' => $categoriaIds->first(), 'empresa_id' => $empresa->id]);
         $item->categorias()->sync($categoriaIds);
 
         return back()->with('success', 'Item criado.');
@@ -69,10 +69,10 @@ class CatalogoController extends Controller
     public function itemUpdate(Request $request, int $item)
     {
         $model = $this->item($item);
-        $data = $request->validate(['categoria_ids' => ['required', 'array', 'min:1'], 'categoria_ids.*' => ['integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40'], 'ativo' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['categoria_ids' => ['required', 'array', 'min:1'], 'categoria_ids.*' => ['integer'], 'nome' => ['required', 'string', 'max:160'], 'descricao' => ['nullable', 'string'], 'unidade' => ['required', 'string', 'max:40'], 'tipo_item' => ['sometimes', 'in:comida,bebida'], 'preco_unitario' => ['nullable', 'numeric', 'min:0'], 'referencia_consumo' => ['nullable', 'string', 'max:160'], 'ativo' => ['sometimes', 'boolean']]);
         $categoriaIds = CategoriaItem::where('empresa_id', $model->empresa_id)->whereIn('id', $data['categoria_ids'])->pluck('id');
         abort_unless($categoriaIds->count() === count(array_unique($data['categoria_ids'])), 422, 'Uma ou mais categorias são inválidas.');
-        $model->update([...$data, 'categoria_id' => $categoriaIds->first()]);
+        $model->update([...$data, 'tipo_item' => $data['tipo_item'] ?? $model->tipo_item ?? 'comida', 'categoria_id' => $categoriaIds->first()]);
         $model->categorias()->sync($categoriaIds);
 
         return back()->with('success', 'Item atualizado.');

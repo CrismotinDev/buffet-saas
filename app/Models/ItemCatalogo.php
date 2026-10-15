@@ -10,11 +10,11 @@ class ItemCatalogo extends Model
 {
     protected $table = 'itens_catalogo';
 
-    protected $fillable = ['empresa_id', 'categoria_id', 'nome', 'descricao', 'unidade', 'imagem_path', 'ativo'];
+    protected $fillable = ['empresa_id', 'categoria_id', 'nome', 'descricao', 'unidade', 'tipo_item', 'preco_unitario', 'referencia_consumo', 'imagem_path', 'ativo'];
 
     protected function casts(): array
     {
-        return ['ativo' => 'boolean'];
+        return ['ativo' => 'boolean', 'preco_unitario' => 'decimal:2'];
     }
 
     public function empresa(): BelongsTo

@@ -1,14 +1,26 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
+import { useTheme } from 'vuetify';
 
 defineProps({ title: { type: String, default: 'Painel' } });
 
 const page = usePage();
+const theme = useTheme();
 const user = computed(() => page.props.auth?.user);
 const empresaAtual = computed(() => page.props.empresaAtual);
 const empresas = computed(() => page.props.empresasDisponiveis ?? []);
 const success = computed(() => page.props.flash?.success);
+const darkMode = computed(() => theme.global.name.value === 'dark');
+
+onMounted(() => {
+    if (localStorage.getItem('gestao-eventos-theme') === 'dark') theme.global.name.value = 'dark';
+});
+
+function alternarTema() {
+    theme.global.name.value = darkMode.value ? 'light' : 'dark';
+    localStorage.setItem('gestao-eventos-theme', theme.global.name.value);
+}
 
 function trocarEmpresa(id) {
     if (id && id !== empresaAtual.value?.id) {
@@ -23,7 +35,7 @@ function sair() {
 
 <template>
     <v-app>
-        <v-navigation-drawer permanent elevation="1" color="white">
+        <v-navigation-drawer permanent elevation="1" color="surface">
             <div class="pa-5">
                 <div class="text-overline text-red-darken-4">Cantinho da Costela</div>
                 <div class="text-h6 font-weight-bold">Gestão de Eventos</div>
@@ -34,13 +46,14 @@ function sair() {
                 <v-list-item prepend-icon="mdi-storefront-outline" title="Minha empresa" href="/app/empresa" />
                 <v-list-item prepend-icon="mdi-food-outline" title="Catálogo" href="/app/catalogo" />
                 <v-list-item prepend-icon="mdi-package-variant-closed" title="Pacotes" href="/app/pacotes" />
-                <v-list-item prepend-icon="mdi-file-document-outline" title="Solicitações" disabled />
+                <v-list-item prepend-icon="mdi-file-document-outline" title="Solicitações" href="/app/solicitacoes" />
             </v-list>
         </v-navigation-drawer>
 
         <v-app-bar flat border="b">
             <v-app-bar-title class="text-subtitle-1 font-weight-medium">{{ title }}</v-app-bar-title>
             <v-spacer />
+            <v-btn :icon="darkMode ? 'mdi-weather-sunny' : 'mdi-weather-night'" variant="text" :aria-label="darkMode ? 'Ativar modo claro' : 'Ativar modo escuro'" :title="darkMode ? 'Modo claro' : 'Modo escuro'" @click="alternarTema" />
             <v-select
                 :model-value="empresaAtual?.id"
                 :items="empresas"

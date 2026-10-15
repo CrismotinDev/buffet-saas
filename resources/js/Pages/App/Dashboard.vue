@@ -4,67 +4,27 @@ import { Head } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 defineOptions({ layout: AppLayout });
-
-const props = defineProps({
-    metricas: { type: Object, required: true },
-    empresa: { type: Object, required: true },
-});
-
+const props = defineProps({ metricas: Object, empresa: Object, catalogo: Object, solicitacoes_recentes: Array, retornos_pendentes: Array, public_url: String });
 const cards = computed(() => [
-    { label: 'Solicitações novas', value: props.metricas.solicitacoes_novas, icon: 'mdi-inbox-arrow-down-outline', color: 'blue' },
+    { label: 'Solicitações novas', value: props.metricas.solicitacoes_novas, icon: 'mdi-inbox-arrow-down-outline', color: 'blue', href: '/app/solicitacoes' },
     { label: 'Propostas enviadas', value: props.metricas.propostas_enviadas, icon: 'mdi-file-send-outline', color: 'orange' },
     { label: 'Aceites pendentes', value: props.metricas.aceites_pendentes, icon: 'mdi-clock-check-outline', color: 'purple' },
     { label: 'Próximos eventos', value: props.metricas.proximos_eventos, icon: 'mdi-calendar-star-outline', color: 'green' },
 ]);
+const copiarLink = async () => { await navigator.clipboard.writeText(props.public_url); window.alert('Link do cardápio copiado.'); };
 </script>
 
 <template>
     <Head title="Dashboard" />
-    <div class="d-flex flex-wrap align-center justify-space-between mb-7 ga-3">
-        <div>
-            <h1 class="text-h4 font-weight-bold">Olá, seja bem-vindo!</h1>
-            <p class="text-body-1 text-medium-emphasis mt-1">Aqui está um resumo da operação de {{ empresa.nome_fantasia }}.</p>
-        </div>
-        <v-chip color="success" variant="tonal" prepend-icon="mdi-check-circle-outline">Ambiente ativo</v-chip>
-    </div>
-
-    <v-row>
-        <v-col v-for="card in cards" :key="card.label" cols="12" sm="6" lg="3">
-            <v-card rounded="lg" border flat class="pa-4 h-100">
-                <div class="d-flex align-center justify-space-between">
-                    <v-avatar :color="card.color" variant="tonal" size="44"><v-icon :icon="card.icon" /></v-avatar>
-                    <span class="text-h4 font-weight-bold">{{ card.value }}</span>
-                </div>
-                <div class="text-body-2 text-medium-emphasis mt-5">{{ card.label }}</div>
-            </v-card>
-        </v-col>
-    </v-row>
-
-    <v-row class="mt-2">
-        <v-col cols="12" lg="8">
-            <v-card rounded="lg" border flat class="pa-6">
-                <div class="d-flex align-center justify-space-between mb-5">
-                    <div>
-                        <h2 class="text-h6 font-weight-bold">Próximos passos</h2>
-                        <p class="text-body-2 text-medium-emphasis mt-1">Prepare seu ambiente para começar a receber solicitações.</p>
-                    </div>
-                    <v-icon icon="mdi-rocket-launch-outline" color="primary" size="32" />
-                </div>
-                <v-list lines="two" class="pa-0">
-                    <v-list-item prepend-icon="mdi-check-circle-outline" title="Empresa configurada" subtitle="Os dados básicos do seu ambiente já estão prontos." />
-                    <v-list-item prepend-icon="mdi-food-outline" title="Cadastre seu catálogo" subtitle="Em breve você poderá criar categorias e itens do buffet." />
-                    <v-list-item prepend-icon="mdi-package-variant-closed" title="Monte seus pacotes" subtitle="Configure preços e regras para seus clientes." />
-                </v-list>
-            </v-card>
-        </v-col>
-        <v-col cols="12" lg="4">
-            <v-card rounded="lg" border flat class="pa-6 h-100">
-                <v-avatar color="primary" variant="tonal" size="52"><v-icon icon="mdi-storefront-outline" size="28" /></v-avatar>
-                <h2 class="text-h6 font-weight-bold mt-5">Sua empresa</h2>
-                <div class="text-body-2 text-medium-emphasis mt-2">{{ empresa.email }}</div>
-                <div class="text-body-2 text-medium-emphasis">{{ empresa.usuarios_count }} usuário(s) ativo(s)</div>
-                <v-btn href="/app/empresa" variant="tonal" color="primary" class="mt-5" append-icon="mdi-arrow-right">Configurar empresa</v-btn>
-            </v-card>
-        </v-col>
-    </v-row>
+    <div class="d-flex flex-wrap align-center justify-space-between mb-7 ga-3"><div><h1 class="text-h4 font-weight-bold">Olá, seja bem-vindo!</h1><p class="text-body-1 text-medium-emphasis mt-1">Aqui está um resumo da operação de {{ empresa.nome_fantasia }}.</p></div><v-chip color="success" variant="tonal" prepend-icon="mdi-check-circle-outline">Ambiente ativo</v-chip></div>
+    <v-row><v-col v-for="card in cards" :key="card.label" cols="12" sm="6" lg="3"><v-card :href="card.href" rounded="lg" border flat class="pa-4 h-100" :class="{ 'dashboard-link': card.href }"><div class="d-flex align-center justify-space-between"><v-avatar :color="card.color" variant="tonal" size="44"><v-icon :icon="card.icon" /></v-avatar><span class="text-h4 font-weight-bold">{{ card.value }}</span></div><div class="text-body-2 text-medium-emphasis mt-5">{{ card.label }}</div></v-card></v-col></v-row>
+    <v-row class="mt-2"><v-col cols="12" lg="8"><v-card rounded="lg" border flat class="h-100"><v-card-item class="pa-6 pb-3"><v-card-title class="px-0 text-h6 font-weight-bold">Solicitações recentes</v-card-title><v-card-subtitle class="px-0">Acompanhe os últimos pedidos recebidos pelo cardápio público.</v-card-subtitle><template #append><v-btn href="/app/solicitacoes" variant="text" color="primary" size="small">Ver todas</v-btn></template></v-card-item><v-divider /><v-list v-if="solicitacoes_recentes.length" lines="two" class="py-1"><v-list-item v-for="solicitacao in solicitacoes_recentes" :key="solicitacao.protocolo" href="/app/solicitacoes"><template #prepend><v-avatar color="primary" variant="tonal" size="40"><v-icon icon="mdi-account-outline" /></v-avatar></template><v-list-item-title class="font-weight-medium">{{ solicitacao.nome }} <span class="text-caption text-medium-emphasis">· {{ solicitacao.pacote }}</span></v-list-item-title><v-list-item-subtitle>{{ solicitacao.data_evento }} · {{ solicitacao.convidados }} convidados · R$ {{ solicitacao.valor }}</v-list-item-subtitle><template #append><v-chip size="small" color="warning" variant="tonal">{{ solicitacao.status.replace('_', ' ') }}</v-chip></template></v-list-item></v-list><div v-else class="pa-10 text-center text-medium-emphasis"><v-icon icon="mdi-inbox-outline" size="40" /><div class="mt-2">Nenhuma solicitação recebida ainda.</div></div></v-card></v-col><v-col cols="12" lg="4"><v-card rounded="lg" border flat class="pa-6 h-100"><div class="d-flex align-center justify-space-between"><div><div class="text-overline text-primary font-weight-bold">Seu cardápio público</div><div class="text-h6 font-weight-bold mt-1">{{ catalogo.pacotes_publicados }} pacote(s) publicado(s)</div></div><v-avatar color="primary" variant="tonal" size="48"><v-icon icon="mdi-link-variant" /></v-avatar></div><div class="text-body-2 text-medium-emphasis mt-4 text-truncate">{{ public_url }}</div><v-btn block color="primary" variant="tonal" rounded="lg" class="mt-5" prepend-icon="mdi-content-copy" @click="copiarLink">Copiar link</v-btn><v-btn block href="/app/pacotes" variant="text" color="primary" class="mt-1">Gerenciar pacotes</v-btn></v-card></v-col></v-row>
+    <v-row class="mt-2"><v-col cols="12"><v-card rounded="lg" border flat><v-card-item class="pa-6 pb-3"><v-card-title class="px-0 text-h6 font-weight-bold">Retornos pendentes</v-card-title><v-card-subtitle class="px-0">Clientes que precisam receber um retorno comercial.</v-card-subtitle><template #append><v-chip color="primary" variant="tonal" prepend-icon="mdi-calendar-clock-outline">{{ metricas.retornos_pendentes }} pendente(s)</v-chip></template></v-card-item><v-divider /><v-list v-if="retornos_pendentes.length" lines="two" class="py-1"><v-list-item v-for="retorno in retornos_pendentes" :key="retorno.id" href="/app/solicitacoes"><template #prepend><v-avatar color="primary" variant="tonal" size="40"><v-icon icon="mdi-phone-clock-outline" /></v-avatar></template><v-list-item-title class="font-weight-medium">{{ retorno.nome }} <span class="text-caption text-medium-emphasis">· {{ retorno.pacote }}</span></v-list-item-title><v-list-item-subtitle>Retornar em {{ retorno.retorno_em }} · {{ retorno.telefone }} · {{ retorno.email }}</v-list-item-subtitle><template #append><v-btn href="/app/solicitacoes" variant="tonal" color="primary" size="small">Abrir</v-btn></template></v-list-item></v-list><div v-else class="pa-6 text-center text-medium-emphasis"><v-icon icon="mdi-calendar-check-outline" size="32" /><div class="mt-2">Nenhum retorno agendado no momento.</div></div></v-card></v-col></v-row>
+    <v-row class="mt-2"><v-col cols="12"><v-card rounded="lg" border flat class="pa-6"><div class="d-flex align-center justify-space-between mb-5"><div><div class="text-h6 font-weight-bold">Visão da operação</div><div class="text-body-2 text-medium-emphasis mt-1">Resumo do que já está configurado no seu ambiente.</div></div><v-icon icon="mdi-chart-box-outline" color="primary" size="32" /></div><v-row><v-col cols="12" sm="4"><div class="operation-stat"><div class="text-h5 font-weight-bold">{{ catalogo.itens }}</div><div class="text-body-2 text-medium-emphasis">Itens ativos no catálogo</div><v-btn href="/app/catalogo" variant="text" color="primary" class="px-0 mt-2" size="small">Gerenciar catálogo</v-btn></div></v-col><v-col cols="12" sm="4"><div class="operation-stat"><div class="text-h5 font-weight-bold">{{ catalogo.categorias }}</div><div class="text-body-2 text-medium-emphasis">Categorias cadastradas</div><v-btn href="/app/catalogo" variant="text" color="primary" class="px-0 mt-2" size="small">Ver categorias</v-btn></div></v-col><v-col cols="12" sm="4"><div class="operation-stat"><div class="text-h5 font-weight-bold">{{ catalogo.pacotes }}</div><div class="text-body-2 text-medium-emphasis">Pacotes ativos</div><v-btn href="/app/pacotes" variant="text" color="primary" class="px-0 mt-2" size="small">Gerenciar pacotes</v-btn></div></v-col></v-row></v-card></v-col></v-row>
 </template>
+
+<style scoped>
+.dashboard-link { cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease; }
+.dashboard-link:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30, 41, 59, .10) !important; }
+.operation-stat { border-left: 3px solid rgba(var(--v-theme-primary), .25); padding-left: 16px; }
+</style>
