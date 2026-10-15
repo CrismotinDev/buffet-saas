@@ -92,10 +92,11 @@ class CatalogoTest extends TestCase
     {
         [$user, $empresa] = $this->membership('show-package@example.com', 'Empresa A', 'empresa-a');
         $categoria = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Carnes', 'slug' => 'carnes']);
+        $categoriaEspecial = CategoriaItem::create(['empresa_id' => $empresa->id, 'nome' => 'Especiais', 'slug' => 'especiais']);
         $item = ItemCatalogo::create(['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id, 'nome' => 'Costela', 'unidade' => 'porção']);
-        $item->categorias()->attach($categoria);
+        $item->categorias()->attach([$categoria->id, $categoriaEspecial->id]);
         $pacote = Pacote::create(['empresa_id' => $empresa->id, 'nome' => 'Tradicional', 'slug' => 'tradicional', 'tipo_preco' => 'por_pessoa', 'preco_base' => 75, 'min_convidados' => 30]);
-        $pacote->categorias()->attach($categoria, ['empresa_id' => $empresa->id, 'min_escolhas' => 1, 'max_escolhas' => 2]);
+        $pacote->categorias()->attach($categoriaEspecial, ['empresa_id' => $empresa->id, 'min_escolhas' => 1, 'max_escolhas' => 2]);
         $pacote->itens()->attach($item, ['empresa_id' => $empresa->id, 'categoria_id' => $categoria->id]);
 
         $this->actingAs($user)->get('/app/pacotes')

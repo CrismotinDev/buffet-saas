@@ -99,11 +99,17 @@ function remover(url) {
 <template>
     <Head title="Catálogo" />
 
-    <div class="d-flex flex-wrap align-center justify-space-between mb-8 ga-4">
-        <div><div class="text-overline text-primary font-weight-bold">Gestão da operação</div><h1 class="text-h4 font-weight-bold mt-1">Catálogo</h1><p class="text-body-1 text-medium-emphasis mt-2">Organize os pratos, categorias e adicionais do seu buffet.</p></div>
-        <v-btn v-if="tab === 'itens'" color="primary" size="large" rounded="lg" prepend-icon="mdi-plus" @click="abrirNovoItem">Novo item</v-btn>
-        <v-btn v-else-if="tab === 'categorias'" color="primary" size="large" rounded="lg" prepend-icon="mdi-plus" @click="abrirNovaCategoria">Nova categoria</v-btn>
-        <v-btn v-else color="primary" size="large" rounded="lg" prepend-icon="mdi-plus" @click="abrirNovoAdicional">Novo adicional</v-btn>
+    <div class="catalog-page-header d-flex align-center justify-space-between mb-3">
+        <div class="d-flex align-center ga-3">
+            <div class="page-title-icon"><v-icon icon="mdi-food-outline" size="19" /></div>
+            <div>
+                <div class="text-caption text-medium-emphasis font-weight-medium">Gestão da operação</div>
+                <h1 class="text-h4 font-weight-bold lh-tight">Catálogo</h1>
+            </div>
+        </div>
+        <v-btn v-if="tab === 'itens'" color="primary" size="small" height="36" rounded="lg" class="text-none px-3" prepend-icon="mdi-plus" @click="abrirNovoItem">Novo item</v-btn>
+        <v-btn v-else-if="tab === 'categorias'" color="primary" size="small" height="36" rounded="lg" class="text-none px-3" prepend-icon="mdi-plus" @click="abrirNovaCategoria">Nova categoria</v-btn>
+        <v-btn v-else color="primary" size="small" height="36" rounded="lg" class="text-none px-3" prepend-icon="mdi-plus" @click="abrirNovoAdicional">Novo adicional</v-btn>
     </div>
 
     <v-row class="mb-2"><v-col cols="12" sm="4"><v-card border flat rounded="xl" class="pa-5"><div class="d-flex align-center ga-4"><v-avatar color="primary" variant="tonal" size="44"><v-icon icon="mdi-food-outline" /></v-avatar><div><div class="text-h5 font-weight-bold">{{ itens.length }}</div><div class="text-body-2 text-medium-emphasis">Itens cadastrados</div></div></div></v-card></v-col><v-col cols="12" sm="4"><v-card border flat rounded="xl" class="pa-5"><div class="d-flex align-center ga-4"><v-avatar color="orange" variant="tonal" size="44"><v-icon icon="mdi-shape-outline" /></v-avatar><div><div class="text-h5 font-weight-bold">{{ categorias.length }}</div><div class="text-body-2 text-medium-emphasis">Categorias</div></div></div></v-card></v-col><v-col cols="12" sm="4"><v-card border flat rounded="xl" class="pa-5"><div class="d-flex align-center ga-4"><v-avatar color="green" variant="tonal" size="44"><v-icon icon="mdi-plus-circle-outline" /></v-avatar><div><div class="text-h5 font-weight-bold">{{ adicionais.length }}</div><div class="text-body-2 text-medium-emphasis">Adicionais</div></div></div></v-card></v-col></v-row>
@@ -129,6 +135,8 @@ function remover(url) {
 </template>
 
 <style scoped>
+.catalog-page-header { min-height: 44px; }
+.page-title-icon { width: 36px; height: 36px; display: grid; place-items: center; color: rgb(var(--v-theme-primary)); background: rgba(var(--v-theme-primary), .10); border: 1px solid rgba(var(--v-theme-primary), .16); border-radius: 10px; }
 :deep(.v-table th) { color: rgb(var(--v-theme-on-surface)); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 :deep(.v-table td) { height: 68px; }
 </style>
