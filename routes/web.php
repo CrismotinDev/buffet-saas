@@ -31,6 +31,7 @@ Route::post('/e/{empresa:slug}/cardapio-personalizado/solicitacoes', [CardapioCo
 Route::get('/e/{empresa:slug}/pacotes/{pacote:slug}', [CardapioController::class, 'pacote'])->name('publico.cardapio.pacote');
 Route::post('/e/{empresa:slug}/pacotes/{pacote:slug}/solicitacoes', [CardapioController::class, 'solicitar'])->name('publico.cardapio.solicitar');
 Route::get('/solicitacoes/confirmacao/{protocolo}', [CardapioController::class, 'confirmacao'])->name('publico.solicitacao.confirmacao');
+Route::get('/propostas/{token}', [SolicitacaoController::class, 'proposta'])->name('publico.proposta');
 
 Route::prefix('app')->name('app.')->middleware(['auth', EnsureEmpresaContext::class])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -56,5 +57,10 @@ Route::prefix('app')->name('app.')->middleware(['auth', EnsureEmpresaContext::cl
     Route::post('/pacotes/{pacote}/alternar', [PacoteController::class, 'toggle'])->name('pacotes.toggle');
     Route::get('/solicitacoes', [SolicitacaoController::class, 'index'])->name('solicitacoes.index');
     Route::patch('/solicitacoes/{solicitacao}/retorno', [SolicitacaoController::class, 'agendarRetorno'])->name('solicitacoes.retorno');
+    Route::patch('/solicitacoes/{solicitacao}/itens/{item}/quantidade', [SolicitacaoController::class, 'atualizarQuantidadeItem'])->name('solicitacoes.itens.quantidade');
+    Route::post('/solicitacoes/{solicitacao}/itens', [SolicitacaoController::class, 'adicionarItem'])->name('solicitacoes.itens.adicionar');
+    Route::patch('/solicitacoes/{solicitacao}/valor-cardapio', [SolicitacaoController::class, 'atualizarValorCardapio'])->name('solicitacoes.valor-cardapio');
+    Route::patch('/solicitacoes/{solicitacao}/proposta', [SolicitacaoController::class, 'configurarProposta'])->name('solicitacoes.proposta');
+    Route::patch('/solicitacoes/{solicitacao}/proposta/enviada', [SolicitacaoController::class, 'marcarPropostaEnviada'])->name('solicitacoes.proposta.enviada');
     Route::delete('/solicitacoes/{solicitacao}', [SolicitacaoController::class, 'destroy'])->name('solicitacoes.destroy');
 });

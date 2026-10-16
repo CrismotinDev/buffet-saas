@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // URL utilizada em links enviados para clientes (WhatsApp/e-mail).
+    // Em desenvolvimento pode apontar para o túnel Cloudflare.
+    'public_url' => env('APP_PUBLIC_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

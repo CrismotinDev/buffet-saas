@@ -18,6 +18,10 @@ class DashboardController extends Controller
         /** @var Empresa $empresa */
         $empresa = app('empresa.atual');
         $solicitacoes = SolicitacaoOrcamento::where('empresa_id', $empresa->id)
+            ->where(function ($query) {
+                $query->whereNull('proposta_token')
+                    ->orWhereNull('preco_proposto');
+            })
             ->with('pacote:id,nome')
             ->latest()
             ->limit(5)
@@ -32,8 +36,13 @@ class DashboardController extends Controller
 
         return Inertia::render('App/Dashboard', [
             'metricas' => [
-                'solicitacoes_novas' => SolicitacaoOrcamento::where('empresa_id', $empresa->id)->where('status', 'recebida')->count(),
-                'propostas_enviadas' => 0,
+                'solicitacoes_novas' => SolicitacaoOrcamento::where('empresa_id', $empresa->id)
+                    ->where(function ($query) {
+                        $query->whereNull('proposta_token')
+                            ->orWhereNull('preco_proposto');
+                    })
+                    ->count(),
+                'propostas_enviadas' => SolicitacaoOrcamento::where('empresa_id', $empresa->id)->whereNotNull('proposta_token')->whereNotNull('preco_proposto')->count(),
                 'aceites_pendentes' => 0,
                 'proximos_eventos' => 0,
                 'retornos_pendentes' => SolicitacaoOrcamento::where('empresa_id', $empresa->id)->where('status', 'retorno_agendado')->count(),
@@ -50,7 +59,7 @@ class DashboardController extends Controller
                 'pacote' => $solicitacao->pacote?->nome,
                 'data_evento' => $solicitacao->data_evento?->format('d/m/Y'),
                 'convidados' => $solicitacao->convidados,
-                'valor' => $solicitacao->preco_estimado,
+                'valor' => $solicitacao->preco_proposto !== null ? max(0, (float) $solicitacao->preco_proposto - (float) $solicitacao->desconto_proposto) : $solicitacao->preco_estimado,
                 'status' => $solicitacao->status,
             ]),
             'retornos_pendentes' => $retornos->map(fn (SolicitacaoOrcamento $solicitacao) => [
@@ -68,7 +77,7 @@ class DashboardController extends Controller
                 'timezone' => $empresa->timezone,
                 'usuarios_count' => $empresa->usuarios()->wherePivot('ativo', true)->count(),
             ],
-            'public_url' => url('/e/'.$empresa->slug),
+            'public_url' => (rtrim((string) config('app.public_url'), '/') ?: rtrim(url(''), '/')).'/e/'.$empresa->slug,
         ]);
     }
 }

@@ -161,6 +161,16 @@ class CatalogoTest extends TestCase
             ->assertSuccessful()
             ->assertInertia(fn ($page) => $page->component('App/Solicitacoes/Index')->where('solicitacoes.0.protocolo', fn ($protocolo) => is_string($protocolo)));
 
+        $solicitacao = SolicitacaoOrcamento::where('nome_contato', 'Cliente Teste')->firstOrFail();
+        $this->actingAs($user)->patch("/app/solicitacoes/{$solicitacao->id}/proposta", [
+            'preco_proposto' => 3600, 'desconto_proposto' => 150, 'validade_proposta' => '2030-01-20', 'observacoes_proposta' => 'Pagamento em duas parcelas.',
+        ])->assertRedirect();
+        $solicitacao->refresh();
+        $this->assertNotNull($solicitacao->proposta_token);
+        $this->get("/propostas/{$solicitacao->proposta_token}")
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->component('Publico/Proposta')->where('proposta.cliente', 'Cliente Teste')->where('proposta.preco_proposto', '3600.00'));
+
         $this->post('/e/empresa-a/pacotes/pacote-tradicional/solicitacoes', [
             'nome_contato' => 'Cliente Personalizado', 'email' => 'personalizado@example.com', 'telefone' => '11988888888',
             'data_evento' => '2030-02-10', 'convidados' => 50, 'tipo_local' => 'interno', 'aceita_contato' => true,

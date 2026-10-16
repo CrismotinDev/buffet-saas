@@ -53,7 +53,7 @@ const compartilhar = async () => { const link = `${window.location.origin}/e/${p
                 </v-card-item>
                 <v-card-text class="px-6 pt-2 flex-grow-1">
                     <div class="text-caption text-medium-emphasis">A partir de</div>
-                    <div class="d-flex align-baseline ga-2 mt-1"><span class="text-h4 font-weight-bold text-grey-darken-4">R$ {{ pacote.preco_base }}</span><span v-if="pacote.tipo_preco === 'por_pessoa'" class="text-body-2 text-medium-emphasis">/ pessoa</span></div>
+                    <div class="d-flex align-baseline ga-2 mt-1"><span class="package-price text-h4 font-weight-bold">R$ {{ pacote.preco_base }}</span><span v-if="pacote.tipo_preco === 'por_pessoa'" class="text-body-2 text-medium-emphasis">/ pessoa</span></div>
                     <v-divider class="my-5" />
                     <div class="d-flex flex-wrap ga-2"><v-chip size="small" variant="outlined" prepend-icon="mdi-account-group-outline">{{ pacote.min_convidados }}{{ pacote.max_convidados ? `–${pacote.max_convidados}` : '+' }} convidados</v-chip><v-chip size="small" variant="outlined" prepend-icon="mdi-food-outline">{{ pacote.itens_count }} pratos</v-chip></div>
                 </v-card-text>
@@ -113,6 +113,7 @@ const compartilhar = async () => { const link = `${window.location.origin}/e/${p
 .package-card__actions { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; gap: 2px; }
 .package-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(30, 41, 59, .10) !important; }
 .package-card__accent { height: 4px; background: linear-gradient(90deg, rgb(var(--v-theme-primary)), #d97706); }
+.package-price { color: rgb(var(--v-theme-on-surface)) !important; }
 .composition-modal__header { background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #b45309 100%); }
 .modal-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .modal-summary > div { border-top: 1px solid rgba(255,255,255,.25); padding-top: 10px; }
